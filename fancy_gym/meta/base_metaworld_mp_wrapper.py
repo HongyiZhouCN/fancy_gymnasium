@@ -55,6 +55,13 @@ class BaseMetaworldMPWrapper(RawInterfaceWrapper):
                 'condition_on_desired': False,
             },
         },
+        'ProDMP_TCE': {
+            'wrappers': [],
+            'controller_kwargs': {
+                'controller_type': 'metaworld',
+            },
+            'make_tce': True
+        }
     }
 
     @property

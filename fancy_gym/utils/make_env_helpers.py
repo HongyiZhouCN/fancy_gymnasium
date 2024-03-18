@@ -5,6 +5,7 @@ from fancy_gym.black_box.factory.phase_generator_factory import get_phase_genera
 from fancy_gym.black_box.factory.controller_factory import get_controller
 from fancy_gym.black_box.factory.basis_generator_factory import get_basis_generator
 from fancy_gym.black_box.black_box_wrapper import BlackBoxWrapper
+from fancy_gym.black_box.tce_wrapper import TCEWrapper
 import uuid
 from collections.abc import MutableMapping
 from math import ceil
@@ -134,6 +135,33 @@ def make_bb(
                              **black_box_kwargs)
 
     return bb_env
+
+
+def make_tce(env: Union[gym.Env, str], wrappers: Iterable,
+             black_box_kwargs: MutableMapping,
+             controller_kwargs: MutableMapping,
+             fallback_max_steps: int = None,
+             **kwargs):
+    learn_sub_trajs = black_box_kwargs.get('learn_sub_trajectories')
+    do_replanning = black_box_kwargs.get('replanning_schedule')
+    if learn_sub_trajs and do_replanning:
+        raise ValueError('Cannot used sub-trajectory learning and replanning together.')
+
+    # add time_step observation when replanning
+    if (learn_sub_trajs or do_replanning) and not any(issubclass(w, TimeAwareObservation) for w in wrappers):
+        # Add as first wrapper in order to alter observation
+        wrappers.insert(0, TimeAwareObservation)
+
+    if isinstance(env, str):
+        env = make(env, **kwargs)
+
+    env = _make_wrapped_env(env=env, wrappers=wrappers,
+                            fallback_max_steps=fallback_max_steps)
+    controller = get_controller(**controller_kwargs)
+    tce_env = TCEWrapper(env, controller, **black_box_kwargs)
+    return tce_env
+
+
 
 
 def ensure_finite_time(env: gym.Env, fallback_max_steps=500):

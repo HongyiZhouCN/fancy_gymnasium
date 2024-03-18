@@ -7,7 +7,7 @@ from collections import defaultdict
 
 from collections.abc import Mapping, MutableMapping
 
-from fancy_gym.utils.make_env_helpers import make_bb
+from fancy_gym.utils.make_env_helpers import make_bb, make_tce
 from fancy_gym.black_box.raw_interface_wrapper import RawInterfaceWrapper
 
 from gymnasium import register as gym_register
@@ -125,7 +125,17 @@ _BB_DEFAULTS = {
         },
         'black_box_kwargs': {
         }
+    },
+    'ProDMP_TCE': {
+        'wrappers': [],
+        'controller_kwargs': {
+            'controller_type': 'motor',
+            'p_gains': 1.0,
+            'd_gains': 0.1,
+        },
+        'make_tce': True
     }
+
 }
 
 KNOWN_MPS = list(_BB_DEFAULTS.keys())
@@ -151,7 +161,7 @@ def register(
         id (str): The unique identifier for the environment.
         entry_point (Optional[Union[Callable, str]]): The entry point for creating the environment.
         mp_wrapper (RawInterfaceWrapper): The MP wrapper for the environment.
-        register_step_based (bool): Whether to also register the raw srtep-based version of the environment (default True).
+        register_step_based (bool): Whether to also register the raw step-based version of the environment (default True).
         add_mp_types (List[str]): List of additional MP types to register.
         mp_config_override (Dict[str, Any]): Dictionary for overriding MP configuration.
         **kwargs: Additional keyword arguments which are passed to the environment constructor.
@@ -299,11 +309,18 @@ def bb_env_constructor(underlying_id, mp_wrapper, mp_type, mp_config_override={}
     phase_kwargs = config.pop('phase_generator_kwargs', {})
     basis_kwargs = config.pop('basis_generator_kwargs', {})
 
-    return make_bb(underlying_env,
-                   wrappers=wrappers,
-                   black_box_kwargs=black_box_kwargs,
-                   traj_gen_kwargs=traj_gen_kwargs,
-                   controller_kwargs=contr_kwargs,
-                   phase_kwargs=phase_kwargs,
-                   basis_kwargs=basis_kwargs,
-                   **config)
+    if config.pop("make_tce", False):
+        return make_tce(underlying_env,
+                        wrappers=wrappers,
+                        black_box_kwargs=black_box_kwargs,
+                        controller_kwargs=contr_kwargs,
+                        **config)
+    else:
+        return make_bb(underlying_env,
+                       wrappers=wrappers,
+                       black_box_kwargs=black_box_kwargs,
+                       traj_gen_kwargs=traj_gen_kwargs,
+                       controller_kwargs=contr_kwargs,
+                       phase_kwargs=phase_kwargs,
+                       basis_kwargs=basis_kwargs,
+                       **config)

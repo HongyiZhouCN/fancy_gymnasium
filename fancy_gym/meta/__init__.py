@@ -5,7 +5,7 @@ from copy import deepcopy
 from ..envs.registry import register
 
 from . import goal_object_change_mp_wrapper, goal_change_mp_wrapper, goal_endeffector_change_mp_wrapper, \
-    object_change_mp_wrapper
+    object_change_mp_wrapper, base_metaworld_mp_wrapper
 
 try:
     import metaworld
@@ -18,7 +18,7 @@ else:
 
     metaworld_adapter.register_all_ML1()
 
-    ALL_METAWORLD_MOVEMENT_PRIMITIVE_ENVIRONMENTS = {"DMP": [], "ProMP": [], "ProDMP": []}
+    ALL_METAWORLD_MOVEMENT_PRIMITIVE_ENVIRONMENTS = {"DMP": [], "ProMP": [], "ProDMP": [], "ProDMP_TCE": []}
 
     # MetaWorld
     _goal_change_envs = ["assembly-v2", "pick-out-of-hole-v2", "plate-slide-v2", "plate-slide-back-v2",
@@ -31,6 +31,13 @@ else:
             add_mp_types=['ProMP', 'ProDMP'],
         )
 
+        register(
+            id=f'metaworld/{_task}',
+            register_step_based=False,
+            mp_wrapper=goal_change_mp_wrapper.BaseMetaworldMPWrapper,
+            add_mp_types=['ProDMP_TCE'],
+        )
+
     _object_change_envs = ["bin-picking-v2", "hammer-v2", "sweep-into-v2"]
     for _task in _object_change_envs:
         register(
@@ -38,6 +45,13 @@ else:
             register_step_based=False,
             mp_wrapper=object_change_mp_wrapper.MPWrapper,
             add_mp_types=['ProMP', 'ProDMP'],
+        )
+
+        register(
+            id=f'metaworld/{_task}',
+            register_step_based=False,
+            mp_wrapper=goal_change_mp_wrapper.BaseMetaworldMPWrapper,
+            add_mp_types=['ProDMP_TCE'],
         )
 
     _goal_and_object_change_envs = ["box-close-v2", "button-press-v2", "button-press-wall-v2", "button-press-topdown-v2",
@@ -59,6 +73,13 @@ else:
             add_mp_types=['ProMP', 'ProDMP'],
         )
 
+        register(
+            id=f'metaworld/{_task}',
+            register_step_based=False,
+            mp_wrapper=goal_change_mp_wrapper.BaseMetaworldMPWrapper,
+            add_mp_types=['ProDMP_TCE'],
+        )
+
     _goal_and_endeffector_change_envs = ["basketball-v2"]
     for _task in _goal_and_endeffector_change_envs:
         register(
@@ -66,4 +87,11 @@ else:
             register_step_based=False,
             mp_wrapper=goal_endeffector_change_mp_wrapper.MPWrapper,
             add_mp_types=['ProMP', 'ProDMP'],
+        )
+
+        register(
+            id=f'metaworld/{_task}',
+            register_step_based=False,
+            mp_wrapper=goal_change_mp_wrapper.BaseMetaworldMPWrapper,
+            add_mp_types=['ProDMP_TCE'],
         )
