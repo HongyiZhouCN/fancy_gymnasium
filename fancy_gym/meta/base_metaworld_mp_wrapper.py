@@ -60,7 +60,7 @@ class BaseMetaworldMPWrapper(RawInterfaceWrapper):
     @property
     def current_pos(self) -> Union[float, int, np.ndarray]:
         r_close = self.env.data.joint('r_close').qpos
-        return np.hstack([self.env.data.mocap_pos.flatten() / self.env.action_scale, r_close])
+        return np.hstack([self.env.data.mocap_pos.flatten(), r_close])
 
     @property
     def current_vel(self) -> Union[float, int, np.ndarray, Tuple]:
