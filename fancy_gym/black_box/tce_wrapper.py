@@ -54,8 +54,8 @@ class TCEWrapper(gym.ObservationWrapper):
 
         # initial condition
         self.init_time = 0
-        self.init_pos = self.current_pos
-        self.init_vel = self.current_vel
+        self.init_pos = self.env.get_wrapper_attr('current_pos')
+        self.init_vel = self.env.get_wrapper_attr('current_vel')
 
         # reward computation
         self.reward_aggregation = reward_aggregation
@@ -72,7 +72,8 @@ class TCEWrapper(gym.ObservationWrapper):
 
         # Append init time space
         init_time_low = 0.0
-        init_time_high = self.env.spec.max_episode_steps * self.dt
+        dt = self.env.get_wrapper_attr('dt')
+        init_time_high = self.env.spec.max_episode_steps * dt
         low = np.append(self.env.observation_space.low, init_time_low)
         high = np.append(self.env.observation_space.high, init_time_high)
 
@@ -170,16 +171,17 @@ class TCEWrapper(gym.ObservationWrapper):
             self.current_traj_steps += 1
 
             # Update initial conditions
-            self.init_time = self.current_traj_steps * self.dt
+            dt = self.env.get_wrapper_attr('dt')
+            self.init_time = self.current_traj_steps * dt
             self.init_pos = pos
             self.init_vel = vel
 
             # Get low-level action
-            step_action = self.tracking_controller.get_action(pos, vel,
-                                                              self.current_pos,
-                                                              self.current_vel)
-            step_actual_pos[t] = self.current_pos
-            step_actual_vel[t] = self.current_vel
+            step_action = self.tracking_controller.get_action(
+                pos, vel, self.env.get_wrapper_attr('current_pos'),
+                self.env.get_wrapper_attr('current_vel'))
+            step_actual_pos[t] = self.env.get_wrapper_attr('current_pos')
+            step_actual_vel[t] = self.env.get_wrapper_attr('current_vel')
 
             clipped_step_action = np.clip(step_action,
                                           self.env.action_space.low,
@@ -265,11 +267,11 @@ class TCEWrapper(gym.ObservationWrapper):
               options: Optional[Dict[str, Any]] = None) \
             -> Tuple[ObsType, Dict[str, Any]]:
         self.current_traj_steps = 0
-        obs, info = super(TCEWrapper, self).reset(seed=seed, options=options)
+        obs, info = super().reset(seed=seed, options=options)
 
         self.init_time = 0
-        self.init_pos = self.current_pos
-        self.init_vel = self.current_vel
+        self.init_pos = self.env.get_wrapper_attr('current_pos')
+        self.init_vel = self.env.get_wrapper_attr('current_vel')
 
         # Use the latest initial state
         return self.observation(obs[:-self.num_dof * 2 - 1]), info
