@@ -106,6 +106,7 @@ _BB_DEFAULTS = {
         'wrappers': [],
         'trajectory_generator_kwargs': {
             'trajectory_generator_type': 'prodmp',
+            'auto_scale_basis': True,
             'duration': 2.0,
             'weights_scale': 1.0,
         },
