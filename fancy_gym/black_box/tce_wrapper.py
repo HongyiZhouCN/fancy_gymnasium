@@ -6,7 +6,6 @@ import gymnasium as gym
 import numpy as np
 from gymnasium.spaces import Box
 from gymnasium.core import ObsType
-from mp_pytorch.mp.mp_interfaces import MPInterface
 
 from fancy_gym.black_box.controller.base_controller import BaseController
 from fancy_gym.black_box.raw_interface_wrapper import RawInterfaceWrapper
@@ -154,8 +153,18 @@ class TCEWrapper(gym.ObservationWrapper):
         segment_info = dict()
         t = 0
 
+        traj_valid = True
+
         # Low level control loop
         for t, (pos, vel) in enumerate(zip(step_desired_pos, step_desired_vel)):
+            # Check if trajectory is valid
+            if hasattr(self.env, "check_traj_step_validity"):
+                is_valid = self.env.check_traj_step_validity(pos)
+            else:
+                is_valid = True
+
+            if not is_valid:
+                traj_valid = False
 
             # Update time steps
             self.current_traj_steps += 1
@@ -166,11 +175,11 @@ class TCEWrapper(gym.ObservationWrapper):
             self.init_vel = vel
 
             # Get low-level action
-            step_action = self.tracking_controller.get_action(
-                pos, vel, self.env.get_wrapper_attr('current_pos'),
-                self.env.get_wrapper_attr('current_vel'))
-            step_actual_pos[t] = self.env.get_wrapper_attr('current_pos')
-            step_actual_vel[t] = self.env.get_wrapper_attr('current_vel')
+            step_action = self.tracking_controller.get_action(pos, vel,
+                                                              self.current_pos,
+                                                              self.current_vel)
+            step_actual_pos[t] = self.current_pos
+            step_actual_vel[t] = self.current_vel
 
             clipped_step_action = np.clip(step_action,
                                           self.env.action_space.low,
@@ -179,6 +188,9 @@ class TCEWrapper(gym.ObservationWrapper):
             # Step
             state, reward, terminated, truncated, info = (
                 self.env.step(clipped_step_action))
+            # Apply penalty if trajectory violates constraints
+            if not traj_valid:
+                reward = self.env.get_invalid_traj_step_penalty(pos)
 
             # Storage state, action, reward and done
             state = self.observation(state)
@@ -253,7 +265,7 @@ class TCEWrapper(gym.ObservationWrapper):
               options: Optional[Dict[str, Any]] = None) \
             -> Tuple[ObsType, Dict[str, Any]]:
         self.current_traj_steps = 0
-        obs, info = super().reset(seed=seed, options=options)
+        obs, info = super(TCEWrapper, self).reset(seed=seed, options=options)
 
         self.init_time = 0
         self.init_pos = self.current_pos
