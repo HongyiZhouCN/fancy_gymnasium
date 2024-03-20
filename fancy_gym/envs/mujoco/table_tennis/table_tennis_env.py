@@ -1,21 +1,25 @@
 import os
 
 import numpy as np
+import gymnasium as gym
 from gymnasium import utils, spaces
 from gymnasium.envs.mujoco import MujocoEnv
 
 from fancy_gym.envs.mujoco.table_tennis.table_tennis_utils import is_init_state_valid, magnus_force
-from fancy_gym.envs.mujoco.table_tennis.table_tennis_utils import jnt_pos_low, jnt_pos_high
+from fancy_gym.envs.mujoco.table_tennis.table_tennis_utils import jnt_pos_low, jnt_pos_high, jnt_vel_low, jnt_vel_high
 
 import mujoco
 
-MAX_EPISODE_STEPS_TABLE_TENNIS = 350
+MAX_EPISODE_STEPS_TABLE_TENNIS = 300
 
 CONTEXT_BOUNDS_2DIMS = np.array([[-1.0, -0.65], [-0.2, 0.65]])
 CONTEXT_BOUNDS_4DIMS = np.array([[-1.0, -0.65, -1.0, -0.65],
                                  [-0.2, 0.65, -0.2, 0.65]])
 CONTEXT_BOUNDS_SWICHING = np.array([[-1.0, -0.65, -1.0, 0.],
                                     [-0.2, 0.65, -0.2, 0.65]])
+
+DEFAULT_ROBOT_INIT_POS = np.array([0.0, 0.0, 0.0, 1.5, 0.0, 0.0, 1.5])
+DEFAULT_ROBOT_INIT_VEL = np.array([0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
 
 
 class TableTennisEnv(MujocoEnv, utils.EzPickle):
@@ -34,7 +38,10 @@ class TableTennisEnv(MujocoEnv, utils.EzPickle):
 
     def __init__(self, ctxt_dim: int = 4, frame_skip: int = 4,
                  goal_switching_step: int = None,
-                 enable_artificial_wind: bool = False, **kwargs):
+                 enable_artificial_wind: bool = False,
+                 random_pos_scale: float = 0.0,
+                 random_vel_scale: float = 0.0,
+                 **kwargs):
         utils.EzPickle.__init__(**locals())
         self._steps = 0
 
@@ -47,6 +54,10 @@ class TableTennisEnv(MujocoEnv, utils.EzPickle):
         self._terminated = False
 
         self._id_set = False
+
+        # initial robot state
+        self._random_pos_scale = random_pos_scale
+        self._random_vel_scale = random_vel_scale
 
         # reward calculation
         self.ball_landing_pos = None
@@ -176,6 +187,17 @@ class TableTennisEnv(MujocoEnv, utils.EzPickle):
                 return True
         return False
 
+    def get_initial_robot_state(self):
+
+        robot_init_pos = DEFAULT_ROBOT_INIT_POS + \
+                         self.np_random.uniform(-1.0, 1.0, size=7) *\
+                         np.array([5.2, 4.0, 5.6, 4.0, 6.1, 3.2, 4.4]) *\
+                         self._random_pos_scale
+
+        robot_init_vel = DEFAULT_ROBOT_INIT_VEL + self.np_random.uniform(-1.0, 1.0, size=7) * self._random_vel_scale
+
+        return np.clip(robot_init_pos, jnt_pos_low, jnt_pos_high), np.clip(robot_init_vel, jnt_vel_low, jnt_vel_high)
+
     def reset_model(self):
         self._steps = 0
         self._init_ball_state = self._generate_valid_init_ball(random_pos=True, random_vel=False)
@@ -192,8 +214,10 @@ class TableTennisEnv(MujocoEnv, utils.EzPickle):
 
         self.model.body_pos[5] = np.concatenate([self._goal_pos, [0.77]])
 
-        self.data.qpos[:7] = np.array([0., 0., 0., 1.5, 0., 0., 1.5])
-        self.data.qvel[:7] = np.zeros(7)
+        robot_init_pos, robot_init_vel = self.get_initial_robot_state()
+
+        self.data.qpos[:7] = robot_init_pos
+        self.data.qvel[:7] = robot_init_vel
 
         mujoco.mj_forward(self.model, self.data)
 
@@ -263,6 +287,14 @@ class TableTennisEnv(MujocoEnv, utils.EzPickle):
             violate_high_bound_error + violate_low_bound_error
         return -invalid_penalty
 
+    def get_invalid_traj_step_penalty(self, pos_traj):
+        violate_high_bound_error = (
+            np.maximum(pos_traj - jnt_pos_high, 0).mean())
+        violate_low_bound_error = (
+            np.maximum(jnt_pos_low - pos_traj, 0).mean())
+        invalid_penalty = violate_high_bound_error + violate_low_bound_error
+        return -invalid_penalty
+
     def get_invalid_traj_step_return(self, action, pos_traj, contextual_obs, tau_bound, delay_bound):
         obs = self._get_obs() if contextual_obs else np.concatenate([self._get_obs(), np.array([0])])  # 0 for invalid traj
         penalty = self._get_traj_invalid_penalty(action, pos_traj, tau_bound, delay_bound)
@@ -283,6 +315,12 @@ class TableTennisEnv(MujocoEnv, utils.EzPickle):
             return False, pos_traj, vel_traj
         return True, pos_traj, vel_traj
 
+    @staticmethod
+    def check_traj_step_validity(pos_traj):
+        if np.any(pos_traj > jnt_pos_high) or np.any(pos_traj < jnt_pos_low):
+            return False
+        else:
+            return True
 
 class TableTennisWind(TableTennisEnv):
     def __init__(self, ctxt_dim: int = 4, frame_skip: int = 4, **kwargs):
@@ -309,3 +347,27 @@ class TableTennisWind(TableTennisEnv):
 class TableTennisGoalSwitching(TableTennisEnv):
     def __init__(self, frame_skip: int = 4, goal_switching_step: int = 99, **kwargs):
         super().__init__(frame_skip=frame_skip, goal_switching_step=goal_switching_step, **kwargs)
+
+
+class TableTennisRandomInit(TableTennisEnv):
+    def __init__(self, ctxt_dim: int = 4, frame_skip: int = 4,
+                 random_pos_scale: float = 1.0,
+                 random_vel_scale: float = 0.0,
+                 **kwargs):
+        super().__init__(ctxt_dim=ctxt_dim, frame_skip=frame_skip,
+                         random_pos_scale=random_pos_scale,
+                         random_vel_scale=random_vel_scale,
+                         **kwargs)
+
+
+if __name__=="__main__":
+    import fancy_gym
+    env = gym.make("fancy_ProDMP/TableTennisRndInit-v0", render_mode="human")
+    print(f"observation space shape: {env.observation_space.shape}")
+    env.reset(seed=0)
+    for i in range(1000):
+        action = env.action_space.sample()
+        obs, rew, terminated, truncated, info = env.step(action)
+        # obs, rew, terminated, truncated, info = env.step(np.zeros(env.action_space.shape))
+        env.render()
+        env.reset()

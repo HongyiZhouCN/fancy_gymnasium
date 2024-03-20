@@ -25,8 +25,8 @@ from .mujoco.hopper_throw.hopper_throw_in_basket import MAX_EPISODE_STEPS_HOPPER
 from .mujoco.walker_2d_jump.walker_2d_jump import MAX_EPISODE_STEPS_WALKERJUMP
 from .mujoco.box_pushing.box_pushing_env import BoxPushingDense, BoxPushingTemporalSparse, \
     BoxPushingTemporalSpatialSparse, MAX_EPISODE_STEPS_BOX_PUSHING
-from .mujoco.table_tennis.table_tennis_env import TableTennisEnv, TableTennisWind, TableTennisGoalSwitching, \
-    MAX_EPISODE_STEPS_TABLE_TENNIS
+from .mujoco.table_tennis.table_tennis_env import TableTennisEnv, TableTennisWind, \
+TableTennisGoalSwitching, TableTennisRandomInit, MAX_EPISODE_STEPS_TABLE_TENNIS
 from .mujoco.table_tennis.mp_wrapper import TT_MPWrapper as MPWrapper_TableTennis
 from .mujoco.table_tennis.mp_wrapper import TT_MPWrapper_Replan as MPWrapper_TableTennis_Replan
 from .mujoco.table_tennis.mp_wrapper import TTVelObs_MPWrapper as MPWrapper_TableTennis_VelObs
@@ -288,6 +288,22 @@ register(
     kwargs={
         'goal_switching_step': 99
     }
+)
+
+register(
+    id='fancy/TableTennisRndInit-v0',
+    entry_point='fancy_gym.envs.mujoco:TableTennisRandomInit',
+    mp_wrapper=MPWrapper_TableTennis,
+    add_mp_types=['ProMP', 'ProDMP', 'ProDMP_TCE'],
+    max_episode_steps=MAX_EPISODE_STEPS_TABLE_TENNIS,
+)
+
+register(
+    id='fancy/TableTennisRndInitReplan-v0',
+    entry_point='fancy_gym.envs.mujoco:TableTennisRandomInit',
+    mp_wrapper=MPWrapper_TableTennis_Replan,
+    add_mp_types=['ProDMP'],
+    max_episode_steps=MAX_EPISODE_STEPS_TABLE_TENNIS,
 )
 
 # Air Hockey environments
