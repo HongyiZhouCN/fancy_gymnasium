@@ -296,6 +296,10 @@ register(
     mp_wrapper=MPWrapper_TableTennis,
     add_mp_types=['ProMP', 'ProDMP', 'ProDMP_TCE'],
     max_episode_steps=MAX_EPISODE_STEPS_TABLE_TENNIS,
+    kwargs={
+        'random_pos_scale': 0.1,
+        'random_vel_scale': 0.0,
+    }
 )
 
 register(

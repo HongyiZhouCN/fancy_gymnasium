@@ -388,7 +388,7 @@ class TableTennisRandomInit(TableTennisEnv):
 
 if __name__=="__main__":
     import fancy_gym
-    env = gym.make("fancy_ProDMP_TCE/TableTennisRndInit-v0", render_mode="human")
+    env = gym.make("fancy_ProDMP/TableTennisRndInit-v0", render_mode="human")
     print(f"observation space shape: {env.observation_space.shape}")
     env.reset(seed=0)
     for i in range(1000):
