@@ -53,6 +53,13 @@ class TT_MPWrapper(RawInterfaceWrapper):
                 'disable_goal': True,
             },
         },
+        'ProDMP_TCE': {
+            'controller_kwargs': {
+                'p_gains': 0.5 * np.array([1.0, 4.0, 2.0, 4.0, 1.0, 4.0, 1.0]),
+                'd_gains': 0.5 * np.array([0.1, 0.4, 0.2, 0.4, 0.1, 0.4, 0.1]),
+            },
+            'make_tce': True
+        }
     }
 
     # Random x goal + random init pos
