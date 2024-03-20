@@ -10,6 +10,7 @@ class MPWrapper(RawInterfaceWrapper):
         'ProMP': {},
         'DMP': {},
         'ProDMP': {},
+        'ProDMP_TCE': {},
     }
 
     # Random x goal + random init pos

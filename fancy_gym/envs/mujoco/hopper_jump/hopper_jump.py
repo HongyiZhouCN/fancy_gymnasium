@@ -205,7 +205,10 @@ class HopperJumpEnv(HopperEnvCustomXML):
             height_rew=self.max_height,
             healthy_reward=self.healthy_reward,
             healthy=self.is_healthy,
-            contact_dist=self.contact_dist or 0
+            contact_dist=self.contact_dist or 0,
+            num_steps=self._steps,
+            has_left_floor=self.has_left_floor
+
         )
 
         if self.render_active and self.render_mode=='human':
@@ -345,3 +348,17 @@ class HopperJumpEnv(HopperEnvCustomXML):
 #             'contact_dist': copy.copy(self.contact_dist) or 0
 #         }
 #         return observation, reward, done, info
+
+
+if __name__=="__main__":
+    seed = 0
+    import gymnasium as gym
+    import fancy_gym
+    env = gym.make("fancy_ProDMP/HopperJumpSparse-v0", seed,
+                render_mode="human")
+    env.reset()
+    for i in range(1000):
+        _, _, terminated, truncated, _ = env.step(env.action_space.sample())
+        env.render()
+        if terminated or truncated:
+            env.reset()
