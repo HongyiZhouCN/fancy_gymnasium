@@ -308,6 +308,10 @@ register(
     mp_wrapper=MPWrapper_TableTennis_Replan,
     add_mp_types=['ProDMP'],
     max_episode_steps=MAX_EPISODE_STEPS_TABLE_TENNIS,
+    kwargs={
+        'random_pos_scale': 0.1,
+        'random_vel_scale': 0.0,
+    }
 )
 
 # Air Hockey environments

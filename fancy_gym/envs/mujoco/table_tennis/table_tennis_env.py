@@ -1,7 +1,6 @@
 import os
 
 import numpy as np
-import gymnasium as gym
 from gymnasium import utils, spaces
 from gymnasium.envs.mujoco import MujocoEnv
 
@@ -156,7 +155,7 @@ class TableTennisEnv(MujocoEnv, utils.EzPickle):
 
         self._steps += 1
         terminated = True if self._steps >= MAX_EPISODE_STEPS_TABLE_TENNIS else False
-        truncated = False
+        truncated = True
         if unstable_simulation:
             reward = -25
         else:
@@ -322,7 +321,7 @@ class TableTennisEnv(MujocoEnv, utils.EzPickle):
         return -invalid_penalty
 
     def get_invalid_traj_step_return(self, action, pos_traj, contextual_obs, tau_bound, delay_bound):
-        obs = self._get_obs() if contextual_obs else np.concatenate([self._get_obs(), np.array([0])])  # 0 for invalid traj
+        obs = self._get_obs() if contextual_obs else np.concatenate([self._get_obs(), np.array([0])]) # 0 for invalid traj
         penalty = self._get_traj_invalid_penalty(action, pos_traj, tau_bound, delay_bound)
         return obs, penalty, True, False, {
             "hit_ball": [False],
@@ -388,6 +387,11 @@ class TableTennisRandomInit(TableTennisEnv):
 
 if __name__=="__main__":
     import fancy_gym
+    import gymnasium as gym
+
+    from gymnasium import logger
+
+    logger.setLevel(logger.ERROR)
     env = gym.make("fancy_ProDMP/TableTennisRndInit-v0", render_mode="human")
     print(f"observation space shape: {env.observation_space.shape}")
     env.reset(seed=0)
