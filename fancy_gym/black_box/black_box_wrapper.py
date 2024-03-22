@@ -59,9 +59,9 @@ class BlackBoxWrapper(gym.ObservationWrapper):
         # check
         self.tau_bound = [-np.inf, np.inf]
         self.delay_bound = [-np.inf, np.inf]
-        if hasattr(self.traj_gen.phase_gn, "tau_bound"):
+        if self.traj_gen.phase_gn.learn_tau:
             self.tau_bound = self.traj_gen.phase_gn.tau_bound
-        if hasattr(self.traj_gen.phase_gn, "delay_bound"):
+        if self.traj_gen.phase_gn.learn_delay:
             self.delay_bound = self.traj_gen.phase_gn.delay_bound
 
         # reward computation

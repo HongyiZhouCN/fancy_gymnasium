@@ -31,6 +31,8 @@ from .mujoco.table_tennis.mp_wrapper import TT_MPWrapper as MPWrapper_TableTenni
 from .mujoco.table_tennis.mp_wrapper import TT_MPWrapper_Replan as MPWrapper_TableTennis_Replan
 from .mujoco.table_tennis.mp_wrapper import TTVelObs_MPWrapper as MPWrapper_TableTennis_VelObs
 from .mujoco.table_tennis.mp_wrapper import TTVelObs_MPWrapper_Replan as MPWrapper_TableTennis_VelObs_Replan
+from .mujoco.table_tennis.mp_wrapper import TTRndRobot_MPWrapper as MPWrapper_TableTennis_RndRobot
+from .mujoco.table_tennis.mp_wrapper import TTRndRobot_MPWrapper_Replan as MPWrapper_TableTennis_RndRobot_Replan
 
 # Classic Control
 # Simple Reacher
@@ -293,7 +295,7 @@ register(
 register(
     id='fancy/TableTennisRndInit-v0',
     entry_point='fancy_gym.envs.mujoco:TableTennisRandomInit',
-    mp_wrapper=MPWrapper_TableTennis,
+    mp_wrapper=MPWrapper_TableTennis_RndRobot,
     add_mp_types=['ProMP', 'ProDMP', 'ProDMP_TCE'],
     max_episode_steps=MAX_EPISODE_STEPS_TABLE_TENNIS,
     kwargs={
@@ -305,7 +307,7 @@ register(
 register(
     id='fancy/TableTennisRndInitReplan-v0',
     entry_point='fancy_gym.envs.mujoco:TableTennisRandomInit',
-    mp_wrapper=MPWrapper_TableTennis_Replan,
+    mp_wrapper=MPWrapper_TableTennis_RndRobot_Replan,
     add_mp_types=['ProDMP'],
     max_episode_steps=MAX_EPISODE_STEPS_TABLE_TENNIS,
     kwargs={

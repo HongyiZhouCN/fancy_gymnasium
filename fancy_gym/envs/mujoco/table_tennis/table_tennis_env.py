@@ -165,7 +165,7 @@ class TableTennisEnv(MujocoEnv, utils.EzPickle):
                 self._ball_traj = []
                 self._racket_traj = []
 
-            land_now= not land_already and self._ball_landing_pos is not None
+            land_now = not land_already and self._ball_landing_pos is not None
             reward = self._get_reward(hit_now, land_now)
 
         land_dist_err = np.linalg.norm(self._ball_landing_pos[:-1] - self._goal_pos) \
