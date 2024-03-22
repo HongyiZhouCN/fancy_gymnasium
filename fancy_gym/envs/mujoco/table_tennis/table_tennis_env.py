@@ -155,7 +155,7 @@ class TableTennisEnv(MujocoEnv, utils.EzPickle):
 
         self._steps += 1
         terminated = True if self._steps >= MAX_EPISODE_STEPS_TABLE_TENNIS else False
-        truncated = True
+        truncated = False
         if unstable_simulation:
             reward = -25
         else:
