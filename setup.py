@@ -60,7 +60,6 @@ setup(
     extras_require=extras,
     install_requires=[
         'toml',
-        'mp_pytorch=0.1.4',
         'mujoco==2.3.3',
         'gymnasium[mujoco]>=0.26.0'
     ],
