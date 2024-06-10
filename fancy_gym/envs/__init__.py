@@ -13,16 +13,11 @@ from .classic_control.viapoint_reacher.viapoint_reacher import ViaPointReacherEn
 from .classic_control.viapoint_reacher import MPWrapper as MPWrapper_ViaPointReacher
 from .mujoco.reacher.reacher import ReacherEnv, MAX_EPISODE_STEPS_REACHER
 from .mujoco.reacher.mp_wrapper import MPWrapper as MPWrapper_Reacher
-from .mujoco.ant_jump.ant_jump import MAX_EPISODE_STEPS_ANTJUMP
 from .mujoco.beerpong.beerpong import MAX_EPISODE_STEPS_BEERPONG, FIXED_RELEASE_STEP
 from .mujoco.beerpong.mp_wrapper import MPWrapper as MPWrapper_Beerpong
 from .mujoco.beerpong.mp_wrapper import MPWrapper_FixedRelease as MPWrapper_Beerpong_FixedRelease
-from .mujoco.half_cheetah_jump.half_cheetah_jump import MAX_EPISODE_STEPS_HALFCHEETAHJUMP
 from .mujoco.hopper_jump.hopper_jump import MAX_EPISODE_STEPS_HOPPERJUMP
 from .mujoco.hopper_jump.hopper_jump_on_box import MAX_EPISODE_STEPS_HOPPERJUMPONBOX
-from .mujoco.hopper_throw.hopper_throw import MAX_EPISODE_STEPS_HOPPERTHROW
-from .mujoco.hopper_throw.hopper_throw_in_basket import MAX_EPISODE_STEPS_HOPPERTHROWINBASKET
-from .mujoco.walker_2d_jump.walker_2d_jump import MAX_EPISODE_STEPS_WALKERJUMP
 from .mujoco.box_pushing.box_pushing_env import BoxPushingDense, BoxPushingTemporalSparse, \
     BoxPushingTemporalSpatialSparse, MAX_EPISODE_STEPS_BOX_PUSHING
 from .mujoco.table_tennis.table_tennis_env import TableTennisEnv, TableTennisWind, \
@@ -139,44 +134,9 @@ register(
 
 # TODO: Add [MPs] later when finished (old TODO I moved here during refactor)
 register(
-    id='fancy/AntJump-v0',
-    entry_point='fancy_gym.envs.mujoco:AntJumpEnv',
-    max_episode_steps=MAX_EPISODE_STEPS_ANTJUMP,
-    add_mp_types=[],
-)
-
-register(
-    id='fancy/HalfCheetahJump-v0',
-    entry_point='fancy_gym.envs.mujoco:HalfCheetahJumpEnv',
-    max_episode_steps=MAX_EPISODE_STEPS_HALFCHEETAHJUMP,
-    add_mp_types=[],
-)
-
-register(
     id='fancy/HopperJumpOnBox-v0',
     entry_point='fancy_gym.envs.mujoco:HopperJumpOnBoxEnv',
     max_episode_steps=MAX_EPISODE_STEPS_HOPPERJUMPONBOX,
-    add_mp_types=[],
-)
-
-register(
-    id='fancy/HopperThrow-v0',
-    entry_point='fancy_gym.envs.mujoco:HopperThrowEnv',
-    max_episode_steps=MAX_EPISODE_STEPS_HOPPERTHROW,
-    add_mp_types=[],
-)
-
-register(
-    id='fancy/HopperThrowInBasket-v0',
-    entry_point='fancy_gym.envs.mujoco:HopperThrowInBasketEnv',
-    max_episode_steps=MAX_EPISODE_STEPS_HOPPERTHROWINBASKET,
-    add_mp_types=[],
-)
-
-register(
-    id='fancy/Walker2DJump-v0',
-    entry_point='fancy_gym.envs.mujoco:Walker2dJumpEnv',
-    max_episode_steps=MAX_EPISODE_STEPS_WALKERJUMP,
     add_mp_types=[],
 )
 
