@@ -336,6 +336,10 @@ class BoxPushingDense(BoxPushingEnvBase):
 
         return reward
 
+class BoxPushingRandomInitDense(BoxPushingDense):
+    def __init__(self, **kwargs):
+        super(BoxPushingRandomInitDense, self).__init__(random_init=True, **kwargs)
+
 
 class BoxPushingTemporalSparse(BoxPushingEnvBase):
     def __init__(self, **kwargs):
@@ -367,6 +371,9 @@ class BoxPushingTemporalSparse(BoxPushingEnvBase):
 
         return reward
 
+class BoxPushingRandomInitTemporalSparse(BoxPushingTemporalSparse):
+    def __init__(self, **kwargs):
+        super(BoxPushingRandomInitTemporalSparse, self).__init__(random_init=True, **kwargs)
 
 class BoxPushingTemporalSpatialSparse(BoxPushingEnvBase):
 
