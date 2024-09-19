@@ -188,6 +188,8 @@ class HopperJumpEnv(HopperEnvCustomXML):
 
         rewards = 0
         if not self.sparse or (self.sparse and self._steps >= MAX_EPISODE_STEPS_HOPPERJUMP):
+            terminated = True
+            truncated = True
             healthy_reward = self.healthy_reward
             distance_reward = -goal_dist * self._dist_weight
             height_reward = (self.max_height if self.sparse else height_after) * self._height_weight
@@ -349,6 +351,9 @@ class HopperJumpEnv(HopperEnvCustomXML):
 #         }
 #         return observation, reward, done, info
 
+class HopperJumpSparse(HopperJumpEnv):
+    def __init__(self):
+        super(HopperJumpSparse, self).__init__(sparse=True)
 
 if __name__=="__main__":
     seed = 0
