@@ -191,7 +191,7 @@ def register(
         mp_wrapper = getattr(mod, attr_name)
     if register_step_based:
         gym_register(id=id, entry_point=entry_point, **kwargs)
-    upgrade(id, mp_wrapper, add_mp_types, mp_config_override)
+    upgrade(id, mp_wrapper, add_mp_types, base_id=None, mp_config_override=mp_config_override)
 
 
 def upgrade(
@@ -233,7 +233,7 @@ def upgrade(
 
 def register_mps(id: str, base_id: str, mp_wrapper: RawInterfaceWrapper, add_mp_types: List[str] = KNOWN_MPS, mp_config_override: Dict[str, Any] = {}):
     for mp_type in add_mp_types:
-        register_mp(id, base_id, mp_wrapper, mp_type, mp_config_override.get(mp_type, {}))
+        register_mp(id, base_id, mp_wrapper, mp_type, mp_config_override)
 
 
 def register_mp(id: str, base_id: str, mp_wrapper: RawInterfaceWrapper, mp_type: List[str], mp_config_override: Dict[str, Any] = {}):

@@ -95,7 +95,7 @@ class BoxPushingEnvBase(MujocoEnv, utils.EzPickle):
         else:
             reward = -50
 
-        reward = reward/10.
+        # reward = reward/10.
 
         obs = self._get_obs()
         box_goal_pos_dist = 0. if not episode_end else np.linalg.norm(box_pos - target_pos)
@@ -371,11 +371,15 @@ class BoxPushingTemporalSparse(BoxPushingEnvBase):
 
         reward += box_goal_pos_dist_reward + box_goal_rot_dist_reward + ep_end_joint_vel
 
+        ###TODO: fixeme
+        reward = reward/100.
+
         return reward
 
 class BoxPushingRandomInitTemporalSparse(BoxPushingTemporalSparse):
     def __init__(self, **kwargs):
         super(BoxPushingRandomInitTemporalSparse, self).__init__(random_init=True, **kwargs)
+
 
 class BoxPushingTemporalSpatialSparse(BoxPushingEnvBase):
 

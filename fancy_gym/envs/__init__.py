@@ -119,10 +119,27 @@ register(
     entry_point='fancy_gym.envs.mujoco:HopperJumpEnv',
     mp_wrapper=mujoco.hopper_jump.MPWrapper,
     max_episode_steps=MAX_EPISODE_STEPS_HOPPERJUMP,
+    add_mp_types=['ProDMP'],
+    mp_config_override={
+        "black_box_kwargs": {
+        "replanning_schedule":  lambda pos, vel, obs, action, t: t % 50 == 0,
+        "max_planning_times": 3,
+        "condition_on_desired": True,}
+    },
     kwargs={
         "sparse": True,
     }
+
 )
+
+# upgrade(
+#     id='fancy/HopperJumpSparseReplan-v0',
+#     mp_wrapper=mujoco.hopper_jump.ReplanMPWrapper,
+#     max_episode_steps=MAX_EPISODE_STEPS_HOPPERJUMP,
+#     register_step_based=False,
+#     mp_config
+#
+# )
 
 register(
     id='fancy/HopperJump-v0',
