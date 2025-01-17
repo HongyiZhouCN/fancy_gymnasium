@@ -10,7 +10,30 @@ from fancy_gym.black_box.controller.base_controller import BaseController
 from fancy_gym.black_box.raw_interface_wrapper import RawInterfaceWrapper
 from fancy_gym.utils.utils import get_numpy
 
+from simpub.sim.mj_publisher import MujocoPublisher
 
+from simpub.xr_device.meta_quest3 import MetaQuest3
+
+from mujoco import mj_name2id, mjtObj  # type: ignore
+
+
+def update_bat(mj_model, mj_data, player1: MetaQuest3, player2: Optional[MetaQuest3] = None):
+    bat1_id = mj_name2id(mj_model, mjtObj.mjOBJ_BODY, "player_EE")
+    player1_input = player1.get_input_data()
+    if player1_input is None:
+        return
+    mj_model.body_pos[bat1_id] = np.array(player1_input["right"]["pos"])
+    quat = player1_input["right"]["rot"]
+    mj_model.body_quat[bat1_id] = np.array([quat[3], quat[0], quat[1], quat[2]])
+    # if player2 is not None:
+    #     bat2_id = mj_name2id(model, mjtObj.mjOBJ_BODY, "bat2")
+    #     player2_input = player2.get_input_data()
+    #     if player2_input is None:
+    #         return
+    #     mj_data.body_pos[bat2_id] = np.array(player2_input["left"]["pos"])
+    #     quat = player2_input["left"]["rot"]
+    #     mj_data.body_quat[bat2_id] = np.array([quat[3], quat[0], quat[1], quat[2]])
+        
 class BlackBoxWrapper(gym.ObservationWrapper):
 
     def __init__(self,
@@ -85,6 +108,13 @@ class BlackBoxWrapper(gym.ObservationWrapper):
 
         self.max_planning_times = max_planning_times
         self.plan_steps = 0
+
+        # self.publisher = MujocoPublisher(self.env.model, self.env.data,
+        #                                  host="192.168.0.143")
+
+        # self.player = MetaQuest3("IRLMQ3-1")
+        
+
 
     def observation(self, observation):
         # return context space if we are
@@ -166,6 +196,7 @@ class BlackBoxWrapper(gym.ObservationWrapper):
         infos = dict()
         terminated, truncated = False, False
 
+        traj_is_valid = True
         if not traj_is_valid:
             obs, trajectory_return, terminated, truncated, infos = self.env.invalid_traj_callback(action, position, velocity,
                                                                                                   self.return_context_observation, self.tau_bound, self.delay_bound)
@@ -179,6 +210,9 @@ class BlackBoxWrapper(gym.ObservationWrapper):
                 step_action, self.env.action_space.low, self.env.action_space.high)
             obs, c_reward, terminated, truncated, info = self.env.step(
                 c_action)
+            ### Update the bat position
+            # update_bat(self.env.model, self.env.data, self.player)
+            
             rewards[t] = c_reward
 
             if self.verbose >= 2:
@@ -227,3 +261,4 @@ class BlackBoxWrapper(gym.ObservationWrapper):
         self.condition_pos = None
         self.condition_vel = None
         return super(BlackBoxWrapper, self).reset(seed=seed, options=options)
+        # return self.observation(self.env.get_obs())

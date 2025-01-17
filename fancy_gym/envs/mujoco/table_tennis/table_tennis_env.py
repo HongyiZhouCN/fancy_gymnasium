@@ -1,3 +1,5 @@
+from typing import Tuple, Optional, Callable, Dict, Any
+
 import os
 
 import numpy as np
@@ -9,6 +11,7 @@ from fancy_gym.envs.mujoco.table_tennis.table_tennis_utils import jnt_pos_low, j
 
 import mujoco
 
+# MAX_EPISODE_STEPS_TABLE_TENNIS = 300
 MAX_EPISODE_STEPS_TABLE_TENNIS = 300
 
 CONTEXT_BOUNDS_2DIMS = np.array([[-1.0, -0.65], [-0.2, 0.65]])
@@ -20,6 +23,21 @@ CONTEXT_BOUNDS_SWICHING = np.array([[-1.0, -0.65, -1.0, 0.],
 DEFAULT_ROBOT_INIT_POS = np.array([0.0, 0.0, 0.0, 1.5, 0.0, 0.0, 1.5])
 DEFAULT_ROBOT_INIT_VEL = np.array([0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
 
+from copy import deepcopy
+
+from mujoco import mj_name2id, mjtObj
+
+from simpub.xr_device.meta_quest3 import MetaQuest3
+from simpub.sim.mj_publisher import MujocoPublisher
+
+def update_bat(mj_model, mj_data, player1: MetaQuest3, player2: Optional[MetaQuest3] = None):
+    bat1_id = mj_name2id(mj_model, mjtObj.mjOBJ_BODY, "player_EE")
+    player1_input = player1.get_input_data()
+    if player1_input is None:
+        return
+    mj_model.body_pos[bat1_id] = np.array(player1_input["right"]["pos"])
+    quat = player1_input["right"]["rot"]
+    mj_model.body_quat[bat1_id] = np.array([quat[3], quat[0], quat[1], quat[2]])
 
 class TableTennisEnv(MujocoEnv, utils.EzPickle):
     """
@@ -51,6 +69,11 @@ class TableTennisEnv(MujocoEnv, utils.EzPickle):
         self._ball_landing_pos = None
         self._init_ball_state = None
         self._terminated = False
+
+        self._player_contact_ball = False
+        self._player_contact_ball_step = 9999999
+        self._player_returned_ball_pos = None
+        self._player_returned_ball_vel = None
 
         self._id_set = False
 
@@ -95,6 +118,12 @@ class TableTennisEnv(MujocoEnv, utils.EzPickle):
         self.action_space = spaces.Box(low=-1, high=1, shape=(7,), dtype=np.float32)
 
         self._wind_vel = np.zeros(3)
+        
+        self.publisher = MujocoPublisher(self.model, self.data,
+                                         host="192.168.0.143")
+        
+        self.player = MetaQuest3("IRLMQ3-1")
+
 
     def _set_ids(self):
         self._floor_contact_id = mujoco.mj_name2id(self.model, mujoco.mjtObj.mjOBJ_GEOM, "floor")
@@ -102,6 +131,7 @@ class TableTennisEnv(MujocoEnv, utils.EzPickle):
         self._bat_front_id = mujoco.mj_name2id(self.model, mujoco.mjtObj.mjOBJ_GEOM, "bat")
         self._bat_back_id = mujoco.mj_name2id(self.model, mujoco.mjtObj.mjOBJ_GEOM, "bat_back")
         self._table_contact_id = mujoco.mj_name2id(self.model, mujoco.mjtObj.mjOBJ_GEOM, "table_tennis_table")
+        self._player_EE_contect_id = mujoco.mj_name2id(self.model, mujoco.mjtObj.mjOBJ_GEOM, "player_bat")
         self._id_set = True
 
     def step(self, action):
@@ -126,7 +156,7 @@ class TableTennisEnv(MujocoEnv, utils.EzPickle):
             except Exception as e:
                 print("Simulation get unstable return with MujocoException: ", e)
                 unstable_simulation = True
-                self._terminated = True
+                # self._terminated = True
                 break
             if not self._terminated:
                 if not self._hit_ball:
@@ -147,15 +177,38 @@ class TableTennisEnv(MujocoEnv, utils.EzPickle):
                         self._ball_landing_pos = self.data.geom("target_ball_contact").xpos.copy()
                         if self._ball_landing_pos[0] < 0.:  # ball lands on the opponent side
                             self._ball_return_success = True
-                        self._terminated = True
+                        # self._terminated = True
+
+                if self._contact_checker(self._ball_contact_id, self._floor_contact_id):  # first check contact with floor
+                    # stop if ball lands on the floor
+                    self._terminated = True
+
+                if self._contact_checker(self._ball_contact_id, self._player_EE_contect_id):
+                    self._player_contact_ball = True
+                    self._player_contact_ball_step = deepcopy(self._steps)
+                        # self._terminated = True
+
+                if self._player_contact_ball and (self._steps - self._player_contact_ball_step > 0):
+                    self._player_returned_ball_pos = [self.data.joint("tar_x").qpos.item(),
+                                                      self.data.joint("tar_y").qpos.item(),
+                                                      self.data.joint("tar_z").qpos.item()]
+
+                    self._player_returned_ball_vel = [self.data.joint("tar_x").qvel.item(),
+                                                      self.data.joint("tar_y").qvel.item(),
+                                                      self.data.joint("tar_z").qvel.item()]
+                    self._terminated = True
+
+            update_bat(self.model, self.data, self.player)
+
 
             # update ball trajectory & racket trajectory
             self._ball_traj.append(self.data.body("target_ball").xpos.copy())
             self._racket_traj.append(self.data.geom("bat").xpos.copy())
 
         self._steps += 1
-        terminated = True if self._steps >= MAX_EPISODE_STEPS_TABLE_TENNIS else False
+        terminated = True if (self._steps >= MAX_EPISODE_STEPS_TABLE_TENNIS or self._terminated) else False
         truncated = False
+
         if unstable_simulation:
             reward = -25
         else:
@@ -207,15 +260,33 @@ class TableTennisEnv(MujocoEnv, utils.EzPickle):
         return np.clip(robot_init_pos, jnt_pos_low, jnt_pos_high), np.clip(robot_init_vel, jnt_vel_low, jnt_vel_high)
 
     def reset_model(self):
-        self._steps = 0
         self._init_ball_state = self._generate_valid_init_ball(random_pos=True, random_vel=False)
         self._goal_pos = self._generate_goal_pos(random=True)
-        self.data.joint("tar_x").qpos = self._init_ball_state[0]
-        self.data.joint("tar_y").qpos = self._init_ball_state[1]
-        self.data.joint("tar_z").qpos = self._init_ball_state[2]
-        self.data.joint("tar_x").qvel = self._init_ball_state[3]
-        self.data.joint("tar_y").qvel = self._init_ball_state[4]
-        self.data.joint("tar_z").qvel = self._init_ball_state[5]
+        if self._player_returned_ball_pos is not None:
+            print("reset ball to player returned ball, at step: ", self._steps)
+            self.data.joint("tar_x").qpos = self._player_returned_ball_pos[0]
+            self.data.joint("tar_y").qpos = self._player_returned_ball_pos[1]
+            self.data.joint("tar_z").qpos = self._player_returned_ball_pos[2]
+            self.data.joint("tar_x").qvel = self._player_returned_ball_vel[0]
+            self.data.joint("tar_y").qvel = self._player_returned_ball_vel[1]
+            self.data.joint("tar_z").qvel = self._player_returned_ball_vel[2]
+            # self.data.joint("tar_x").qpos = self._init_ball_state[0]
+            # self.data.joint("tar_y").qpos = self._init_ball_state[1]
+            # self.data.joint("tar_z").qpos = self._init_ball_state[2]
+            # self.data.joint("tar_x").qvel = self._init_ball_state[3]
+            # self.data.joint("tar_y").qvel = self._init_ball_state[4]
+            # self.data.joint("tar_z").qvel = self._init_ball_state[5]
+
+        else:
+            print("reset ball to init ball state with no player, at step: ", self._steps)
+            self.data.joint("tar_x").qpos = self._init_ball_state[0]
+            self.data.joint("tar_y").qpos = self._init_ball_state[1]
+            self.data.joint("tar_z").qpos = self._init_ball_state[2]
+            self.data.joint("tar_x").qvel = self._init_ball_state[3]
+            self.data.joint("tar_y").qvel = self._init_ball_state[4]
+            self.data.joint("tar_z").qvel = self._init_ball_state[5]
+
+        self._steps = 0
 
         if self._enable_artificial_wind:
             self._artificial_force = self.np_random.uniform(low=-0.1, high=0.1)
@@ -234,6 +305,12 @@ class TableTennisEnv(MujocoEnv, utils.EzPickle):
         self._ball_contact_after_hit = False
         self._ball_return_success = False
         self._ball_landing_pos = None
+
+        self._player_contact_ball = False
+        self._player_contact_ball_step = 9999999
+        self._player_returned_ball_pos = None
+        self._player_returned_ball_vel = None
+
         self._terminated = False
         self._ball_traj = []
         self._racket_traj = []
@@ -244,6 +321,9 @@ class TableTennisEnv(MujocoEnv, utils.EzPickle):
             return self.np_random.uniform(low=self.context_bounds[0][-2:], high=self.context_bounds[1][-2:])
         else:
             return np.array([-0.6, 0.4])
+
+    def get_obs(self):
+        return self._get_obs()
 
     def _get_obs(self):
         obs = np.concatenate([
