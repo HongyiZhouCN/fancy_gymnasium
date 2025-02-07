@@ -119,8 +119,8 @@ class TableTennisEnv(MujocoEnv, utils.EzPickle):
 
         self._wind_vel = np.zeros(3)
         
-        self.publisher = MujocoPublisher(self.model, self.data,
-                                         host="192.168.0.143")
+        self.publisher = MujocoPublisher(self.model, self.data,)
+                                         # host="192.168.0.143")
         
         self.player = MetaQuest3("IRLMQ3-1")
 
@@ -196,7 +196,7 @@ class TableTennisEnv(MujocoEnv, utils.EzPickle):
                     self._player_returned_ball_vel = [self.data.joint("tar_x").qvel.item(),
                                                       self.data.joint("tar_y").qvel.item(),
                                                       self.data.joint("tar_z").qvel.item()]
-                    self._terminated = True
+                    # self._terminated = True
 
             update_bat(self.model, self.data, self.player)
 
@@ -262,29 +262,29 @@ class TableTennisEnv(MujocoEnv, utils.EzPickle):
     def reset_model(self):
         self._init_ball_state = self._generate_valid_init_ball(random_pos=True, random_vel=False)
         self._goal_pos = self._generate_goal_pos(random=True)
-        if self._player_returned_ball_pos is not None:
-            print("reset ball to player returned ball, at step: ", self._steps)
-            self.data.joint("tar_x").qpos = self._player_returned_ball_pos[0]
-            self.data.joint("tar_y").qpos = self._player_returned_ball_pos[1]
-            self.data.joint("tar_z").qpos = self._player_returned_ball_pos[2]
-            self.data.joint("tar_x").qvel = self._player_returned_ball_vel[0]
-            self.data.joint("tar_y").qvel = self._player_returned_ball_vel[1]
-            self.data.joint("tar_z").qvel = self._player_returned_ball_vel[2]
-            # self.data.joint("tar_x").qpos = self._init_ball_state[0]
-            # self.data.joint("tar_y").qpos = self._init_ball_state[1]
-            # self.data.joint("tar_z").qpos = self._init_ball_state[2]
-            # self.data.joint("tar_x").qvel = self._init_ball_state[3]
-            # self.data.joint("tar_y").qvel = self._init_ball_state[4]
-            # self.data.joint("tar_z").qvel = self._init_ball_state[5]
-
-        else:
-            print("reset ball to init ball state with no player, at step: ", self._steps)
-            self.data.joint("tar_x").qpos = self._init_ball_state[0]
-            self.data.joint("tar_y").qpos = self._init_ball_state[1]
-            self.data.joint("tar_z").qpos = self._init_ball_state[2]
-            self.data.joint("tar_x").qvel = self._init_ball_state[3]
-            self.data.joint("tar_y").qvel = self._init_ball_state[4]
-            self.data.joint("tar_z").qvel = self._init_ball_state[5]
+        # if self._player_returned_ball_pos is not None:
+        #     print("reset ball to player returned ball, at step: ", self._steps)
+        #     self.data.joint("tar_x").qpos = self._player_returned_ball_pos[0]
+        #     self.data.joint("tar_y").qpos = self._player_returned_ball_pos[1]
+        #     self.data.joint("tar_z").qpos = self._player_returned_ball_pos[2]
+        #     self.data.joint("tar_x").qvel = self._player_returned_ball_vel[0]
+        #     self.data.joint("tar_y").qvel = self._player_returned_ball_vel[1]
+        #     self.data.joint("tar_z").qvel = self._player_returned_ball_vel[2]
+        #     # self.data.joint("tar_x").qpos = self._init_ball_state[0]
+        #     # self.data.joint("tar_y").qpos = self._init_ball_state[1]
+        #     # self.data.joint("tar_z").qpos = self._init_ball_state[2]
+        #     # self.data.joint("tar_x").qvel = self._init_ball_state[3]
+        #     # self.data.joint("tar_y").qvel = self._init_ball_state[4]
+        #     # self.data.joint("tar_z").qvel = self._init_ball_state[5]
+        #
+        # else:
+        # print("reset ball to init ball state with no player, at step: ", self._steps)
+        self.data.joint("tar_x").qpos = self._init_ball_state[0]
+        self.data.joint("tar_y").qpos = self._init_ball_state[1]
+        self.data.joint("tar_z").qpos = self._init_ball_state[2]
+        self.data.joint("tar_x").qvel = self._init_ball_state[3]
+        self.data.joint("tar_y").qvel = self._init_ball_state[4]
+        self.data.joint("tar_z").qvel = self._init_ball_state[5]
 
         self._steps = 0
 
